@@ -11,24 +11,26 @@ cam_bridge = CvBridge()
 aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_5X5_50)
 aruco_params = cv2.aruco.DetectorParameters_create()
 
+# UI options
+SHOW_UI = False # controlled by param server, defaults to False
 DRAW_MARKER_CROSS = True
 DRAW_MARKER_RECT = False
 DRAW_MARKER_ID = False
 
-def detect_fiducial(img):
-    """Identifies ARUCO fiducial markers in given image
+fid_id = -1 # robot's aruco marker ID, if -1 then assume only one marker and always output location of lowest id present
+
+def detect_fiducial(img, fid_id=-1):
+    """Locates ARUCO fiducial marker in given image
     
     Args:
         img (BGR Image): Image to analyse
-    
+        fid_id (int, Optional): Marker ID to search for. If -1 then assume only one marker and always output location of lowest id present. Deafults to -1
+        
     Returns:
-        array: Array of corners identified
-        array: Array of marker ids identified
+        [int, int]: Location of center of fiducial marker
         BGR Image: Image with identified markers drawn on
     """
     corners, ids, rejected = cv2.aruco.detectMarkers(img, aruco_dict, parameters=aruco_params)
-
-    out = {}
 
     ret_img = img.copy()
 
@@ -36,38 +38,47 @@ def detect_fiducial(img):
         ids = ids.flatten()
 
         for marker, id in zip(corners, ids):
-            top_left = marker[0, 0]
-            top_right = marker[0, 1]
-            bot_right = marker[0, 2]
-            bot_left = marker[0, 3]
+            if (id == fid_id or fid_id == -1):
+                # convert corner locations to ints
+                top_left = marker[0, 0]
+                top_right = marker[0, 1]
+                bot_right = marker[0, 2]
+                bot_left = marker[0, 3]
 
-            top_right = (int(top_right[0]), int(top_right[1]))
-            bot_right = (int(bot_right[0]), int(bot_right[1]))
-            bot_left = (int(bot_left[0]), int(bot_left[1]))
-            top_left = (int(top_left[0]), int(top_left[1]))
+                top_right = (int(top_right[0]), int(top_right[1]))
+                bot_right = (int(bot_right[0]), int(bot_right[1]))
+                bot_left = (int(bot_left[0]), int(bot_left[1]))
+                top_left = (int(top_left[0]), int(top_left[1]))
 
-            center = (int((top_right[0]+bot_left[0])/2), int((top_left[1]+bot_right[1])/2))
-            out[f'{id}'] = center
+                # calculate centre of marker
+                center = (int((top_right[0]+bot_left[0])/2), int((top_left[1]+bot_right[1])/2))
 
-            if DRAW_MARKER_CROSS:
-                # draw cross at centre
-                cv2.line(ret_img, (center[0]-20, center[1]), (center[0]+20, center[1]), (0, 0, 255), 1)
-                cv2.line(ret_img, (center[0], center[1]-20), (center[0], center[1]+20), (0, 0, 255), 1)
-            
-            if DRAW_MARKER_RECT:
-                # draw box around marker
-                cv2.line(ret_img, top_left, top_right, (0, 255, 0), 2)
-                cv2.line(ret_img, top_right, bot_right, (0, 255, 0), 2)
-                cv2.line(ret_img, bot_right, bot_left, (0, 255, 0), 2)
-                cv2.line(ret_img, bot_left, top_left, (0, 255, 0), 2)
+                if SHOW_UI and DRAW_MARKER_CROSS:
+                    # draw cross at centre
+                    cv2.line(ret_img, (center[0]-20, center[1]), (center[0]+20, center[1]), (0, 0, 255), 1)
+                    cv2.line(ret_img, (center[0], center[1]-20), (center[0], center[1]+20), (0, 0, 255), 1)
+                
+                if SHOW_UI and DRAW_MARKER_RECT:
+                    # draw box around marker
+                    cv2.line(ret_img, top_left, top_right, (0, 255, 0), 2)
+                    cv2.line(ret_img, top_right, bot_right, (0, 255, 0), 2)
+                    cv2.line(ret_img, bot_right, bot_left, (0, 255, 0), 2)
+                    cv2.line(ret_img, bot_left, top_left, (0, 255, 0), 2)
 
-            if DRAW_MARKER_ID:
-                # draw marker id text
-                cv2.putText(ret_img, f"FID{id}", bot_left, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1)
-    else:
+                if SHOW_UI and DRAW_MARKER_ID:
+                    # draw marker id text
+                    cv2.putText(ret_img, f"FID{id}", bot_left, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1)
+
+                return center, ret_img # if successfuly found marker, return location
+    
+    # if reaches here, didnt find marker, or didnt find marker with id indicated
+
+    if fid_id == -1:
         rospy.loginfo("Didnt find marker in frame")
+    else:
+        rospy.loginfo("Didnt find marker with ID f{fid_id} in frame")
 
-    return out, ret_img
+    return None, ret_img
 
 def image_callback(img_msg):
     """rgb image message callback
@@ -83,22 +94,32 @@ def image_callback(img_msg):
     image = imutils.resize(image, height=500)
     marker_centers, image = detect_fiducial(image)
 
-    # display iamge
-    cv2.imshow("Image Window", image)
+    if SHOW_UI:
+        # display image
+        cv2.imshow("Image Window", image)
 
-    # handle user input
-    k = cv2.waitKey(1) & 0xFF
-    if k == ord('q'):
-        cv2.destroyAllWindows()
-        rospy.signal_shutdown("User requested shutdown")
+        # handle user input
+        k = cv2.waitKey(1) & 0xFF
+        if k == ord('q'):
+            cv2.destroyAllWindows()
+            rospy.signal_shutdown("User requested shutdown")
 
 
 if __name__ == "__main__":
 
     rospy.init_node('tango_tracker')
-    rospy.loginfo("Tango Tracker started") 
+    rospy.loginfo("Tango Tracker started")
+
+    SHOW_UI = rospy.get_param('~show_ui', default=False)
+    if type(SHOW_UI) is not bool:
+        rospy.logerr("param ~show_ui must be a boolean")
+
+    fid_id = rospy.get_param('~robot_arucoID', default=-1)
+    if type(fid_id) is not int:
+        rospy.logerr("param ~robot_arucoID must be an integer")
 
     image_sub = rospy.Subscriber("/camera/color/image_raw", msg.Image, image_callback)
+    #position_pub = rospy.Publisher("/position", msg.) # TODO output position to topic
 
     while not rospy.is_shutdown():
         rospy.spin()
