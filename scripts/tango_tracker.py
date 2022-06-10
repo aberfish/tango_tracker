@@ -1,11 +1,13 @@
 import rospy
-from sensor_msgs import msg
+from sensor_msgs import msg as sens_msg
+from geometry_msgs import msg as geom_msg
 from cv_bridge import CvBridge, CvBridgeError
 
 import cv2
 import imutils
 
 cam_bridge = CvBridge()
+position_pub = None
 
 # aruco marker parameters
 aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_5X5_50)
@@ -92,7 +94,14 @@ def image_callback(img_msg):
 
     # analyse image
     image = imutils.resize(image, height=500)
-    marker_centers, image = detect_fiducial(image)
+    marker_center, image = detect_fiducial(image)
+
+    if marker_center is not None: # None if no marker detected
+
+        # publish center position
+        if position_pub is None:
+            rospy.logerr("Position publisher not initialised")
+        position_pub.publish(x=marker_center[0], y=marker_center[1])
 
     if SHOW_UI:
         # display image
@@ -118,8 +127,8 @@ if __name__ == "__main__":
     if type(fid_id) is not int:
         rospy.logerr("param ~robot_arucoID must be an integer")
 
-    image_sub = rospy.Subscriber("/camera/color/image_raw", msg.Image, image_callback)
-    #position_pub = rospy.Publisher("/position", msg.) # TODO output position to topic
+    image_sub = rospy.Subscriber("/camera/color/image_raw", sens_msg.Image, image_callback)
+    position_pub = rospy.Publisher("/position", geom_msg.Point, queue_size=10)
 
     while not rospy.is_shutdown():
         rospy.spin()
