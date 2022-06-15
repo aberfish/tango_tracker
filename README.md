@@ -1,6 +1,18 @@
 # tango_tracker
 ROS package using opencv to track a wheeled robot using fiducial markers.
 
+- [tango_tracker](#tango_tracker)
+  - [Nodes](#nodes)
+    - [tango_tracker.py](#tango_trackerpy)
+      - [Subscribes:](#subscribes)
+      - [Publishes:](#publishes)
+      - [Parameters:](#parameters)
+      - [Usage:](#usage)
+  - [Setup](#setup)
+  - [Launch Files](#launch-files)
+    - [tracker_debug](#tracker_debug)
+      - [Arguments](#arguments)
+
 ## Nodes
 ### tango_tracker.py
 Detects ARUCO-5x5-50 markers in each message from the color image input and publishes their location.
@@ -30,7 +42,7 @@ To track the robot with a **specific marker ID**:
 Place contents of repository in the directory ```<ros_workspace_dir>/src/tango_tracker```. Build and source your ROS workspace.
 
 ## Launch Files
-### tracker_debug.launch
+### tracker_debug
 Example usage: ```roslaunch tango_tracker tracker_debug.launch marker_size:=5 rosbag_path:="/home/rose/Documents/TangoProject/2022-06-06-14-05-29.bag"```
 
 #### Arguments
