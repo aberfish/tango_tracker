@@ -12,12 +12,15 @@ position_pub = None
 # aruco marker parameters
 aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_5X5_50)
 aruco_params = cv2.aruco.DetectorParameters_create()
+MARKER_SIZE = 0 # marker width/height in centimeters
+
+# TODO use MARKER_SIZE to scale coordinates
 
 # UI options
 SHOW_UI = False # controlled by param server, defaults to False
 DRAW_MARKER_CROSS = True
-DRAW_MARKER_RECT = False
-DRAW_MARKER_ID = False
+DRAW_MARKER_RECT = True
+DRAW_MARKER_ID = True
 
 fid_id = -1 # robot's aruco marker ID, if -1 then assume only one marker and always output location of lowest id present
 
@@ -126,6 +129,10 @@ if __name__ == "__main__":
     fid_id = rospy.get_param('~robot_arucoID', default=-1)
     if type(fid_id) is not int:
         rospy.logerr("param ~robot_arucoID must be an integer")
+
+    MARKER_SIZE = rospy.get_param('~marker_size')
+    if type(SHOW_UI) is not float:
+        rospy.logerr("param ~marker_size must be a float")
 
     image_sub = rospy.Subscriber("/camera/color/image_raw", sens_msg.Image, image_callback)
     position_pub = rospy.Publisher("/position", geom_msg.Point, queue_size=10)

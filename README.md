@@ -14,6 +14,7 @@ Detects ARUCO-5x5-50 markers in each message from the color image input and publ
 #### Parameters:
  - *~show_ui* (boolean, Optional): If True, show the opencv tracking UI for debugging. Defaults to false
  - *~robot_arucoID* (int, Optional): ID of the Aruco marker on the robot. Defaults to selecting the lowest Aruco marker ID in the frame
+ - *~marker_size* (float): Measuerment in **centimeters** of aruco marker width/height
 
 #### Usage:
 To **track the robot**:
@@ -27,3 +28,11 @@ To track the robot with a **specific marker ID**:
 
 ## Setup
 Place contents of repository in the directory ```<ros_workspace_dir>/src/tango_tracker```. Build and source your ROS workspace.
+
+## Launch Files
+### tracker_debug.launch
+Example usage: ```roslaunch tango_tracker tracker_debug.launch marker_size:=5 rosbag_path:="/home/rose/Documents/TangoProject/2022-06-06-14-05-29.bag"```
+
+#### Arguments
+ - *marker_size* (float): Measuerment in **centimeters** of aruco marker width/height
+ - *rosbag_path* (str): Absolute path to a rosbag containing the */camera/color/raw_image* topic
