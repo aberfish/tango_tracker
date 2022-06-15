@@ -124,6 +124,7 @@ def image_callback(img_msg):
 if __name__ == "__main__":
 
     rospy.init_node('tango_tracker')
+    rate = rospy.Rate(7) # ROS Rate at 5Hz
     rospy.loginfo("Tango Tracker started")
 
     SHOW_UI = rospy.get_param('~show_ui', default=False)
@@ -137,8 +138,9 @@ if __name__ == "__main__":
     MARKER_SIZE = rospy.get_param('~marker_size')
 
     image_sub = rospy.Subscriber("/camera/color/image_raw", sens_msg.Image, image_callback)
-    position_pub = rospy.Publisher("/position", geom_msg.Point, queue_size=10)
+    position_pub = rospy.Publisher("/position_2d", geom_msg.Point, queue_size=10)
     final_img_pub = rospy.Publisher("/tracker_debug/final_img", sens_msg.Image, queue_size=10)
 
     while not rospy.is_shutdown():
         rospy.spin()
+        rate.sleep()

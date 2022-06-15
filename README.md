@@ -20,10 +20,10 @@ Detects ARUCO-5x5-50 markers in each message from the color image input and publ
 All input images are scaled to height = 500px, keeping constant aspect ratio. Current camera images will end up with h=500px w=888px.
 
 #### Subscribes:
- - */camera/color/raw_image* (sensor_msgs.Image): Color image input
+ - */camera/color/image_raw* (sensor_msgs.Image): Color image input
 
 #### Publishes:
- - */position* (geometry_msgs.Point): Image X and Y coordinates of the robot. Z is always zero
+ - */position*_2d (geometry_msgs.Point): Image X and Y coordinates of the robot. Z is always zero
  - */tracker_debug/final_img* (sensor_msgs.Image): Resultant debug image showing detected markers
 
 #### Parameters:
