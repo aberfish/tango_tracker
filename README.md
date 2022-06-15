@@ -17,11 +17,14 @@ ROS package using opencv to track a wheeled robot using fiducial markers.
 ### tango_tracker.py
 Detects ARUCO-5x5-50 markers in each message from the color image input and publishes their location.
 
+All input images are scaled to height = 500px, keeping constant aspect ratio. Current camera images will end up with h=500px w=888px.
+
 #### Subscribes:
  - */camera/color/raw_image* (sensor_msgs.Image): Color image input
 
 #### Publishes:
  - */position* (geometry_msgs.Point): Image X and Y coordinates of the robot. Z is always zero
+ - */tracker_debug/final_img* (sensor_msgs.Image): Resultant debug image showing detected markers
 
 #### Parameters:
  - *~show_ui* (boolean, Optional): If True, show the opencv tracking UI for debugging. Defaults to false
