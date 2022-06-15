@@ -43,7 +43,9 @@ Place contents of repository in the directory ```<ros_workspace_dir>/src/tango_t
 
 ## Launch Files
 ### tracker_debug
-Example usage: ```roslaunch tango_tracker tracker_debug.launch marker_size:=5 rosbag_path:="/home/rose/Documents/TangoProject/2022-06-06-14-05-29.bag"```
+Example usage: 
+
+```roslaunch tango_tracker tracker_debug.launch marker_size:=5 rosbag_path:="/home/rose/Documents/TangoProject/2022-06-06-14-05-29.bag"```
 
 #### Arguments
  - *marker_size* (float): Measuerment in **centimeters** of aruco marker width/height

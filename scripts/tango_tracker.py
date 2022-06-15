@@ -101,10 +101,13 @@ def image_callback(img_msg):
 
     if marker_center is not None: # None if no marker detected
 
-        # publish center position
+        # publish center position and debug image
         if position_pub is None:
             rospy.logerr("Position publisher not initialised")
+        if final_img_pub is None:
+            rospy.logerr("Image publisher not initialised")
         position_pub.publish(x=marker_center[0], y=marker_center[1])
+        final_img_pub.publish(cam_bridge.cv2_to_imgmsg(image))
 
     if SHOW_UI:
         # display image
@@ -136,6 +139,7 @@ if __name__ == "__main__":
 
     image_sub = rospy.Subscriber("/camera/color/image_raw", sens_msg.Image, image_callback)
     position_pub = rospy.Publisher("/position", geom_msg.Point, queue_size=10)
+    final_img_pub = rospy.Publisher("/tracker_debug/final_img", sens_msg.Image, queue_size=10)
 
     while not rospy.is_shutdown():
         rospy.spin()
