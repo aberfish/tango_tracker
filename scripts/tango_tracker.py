@@ -97,6 +97,7 @@ def image_callback(img_msg):
 
     # analyse image
     image = imutils.resize(image, height=500)
+    rospy.loginfo(f"Image size after scaling: w={image.shape[1]} h={image.shape[0]}")
     marker_center, image = detect_fiducial(image)
 
     if marker_center is not None: # None if no marker detected
@@ -134,8 +135,6 @@ if __name__ == "__main__":
         rospy.logerr("param ~robot_arucoID must be an integer")
 
     MARKER_SIZE = rospy.get_param('~marker_size')
-    if type(SHOW_UI) is not float:
-        rospy.logerr("param ~marker_size must be a float")
 
     image_sub = rospy.Subscriber("/camera/color/image_raw", sens_msg.Image, image_callback)
     position_pub = rospy.Publisher("/position", geom_msg.Point, queue_size=10)

@@ -2,6 +2,8 @@
     <arg name="rosbag_path" />
     <arg name="marker_size" />
 
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find tango_tracker)/custom_rosconsole.conf"/>
+
     <node pkg="tango_tracker" type="tango_tracker.py" name="tracker" args="_show_ui:=True _marker_size:=$(arg marker_size)" required="true"/>
     <node pkg="rosbag" type="play" name="player" output="screen" args="$(arg rosbag_path)" required="true"/>
 </launch>
