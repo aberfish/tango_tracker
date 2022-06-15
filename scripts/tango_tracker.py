@@ -108,7 +108,7 @@ def image_callback(img_msg):
         if final_img_pub is None:
             rospy.logerr("Image publisher not initialised")
         position_pub.publish(x=marker_center[0], y=marker_center[1])
-        final_img_pub.publish(cam_bridge.cv2_to_imgmsg(image))
+        final_img_pub.publish(cam_bridge.cv2_to_imgmsg(image, encoding="bgr8"))
 
     if SHOW_UI:
         # display image
