@@ -16,8 +16,6 @@ aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_5X5_50)
 aruco_params = cv2.aruco.DetectorParameters_create()
 MARKER_SIZE = 0 # marker width/height in centimeters
 
-# TODO use MARKER_SIZE to scale coordinates
-
 # UI options
 SHOW_UI = False # controlled by param server, defaults to False
 DRAW_MARKER_CROSS = True
@@ -60,9 +58,18 @@ def detect_fiducial(img, fid_id=-1):
                 # calculate centre of marker
                 center = (int((top_right[0]+bot_left[0])/2), int((top_left[1]+bot_right[1])/2))
 
-                # calculate angle between horizontal and robot orientation
+                # calculate angle between horizontal and fiducial orientation
                 angle = atan2(top_right[1] - bot_right[1], top_right[0] - bot_right[0])
                 angle = degrees(angle)
+
+                # calculate pixel scale using marker size
+                side_len_1 = sqrt((top_left[0] - top_right[0])**2+(top_left[1] - top_right[1])**2)
+                side_len_2 = sqrt((top_right[0] - bot_right[0])**2+(top_right[1] - bot_right[1])**2)
+                side_len_3 = sqrt((bot_right[0] - bot_left[0])**2+(bot_right[1] - bot_left[1])**2)
+                side_len_4 = sqrt((bot_left[0] - top_left[0])**2+(bot_left[1] - top_left[1])**2)
+                avg_side_len = (side_len_1 + side_len_2 + side_len_3 + side_len_4) / 4
+
+                px_scale = MARKER_SIZE / avg_side_len
 
                 # draw debug ui
                 if SHOW_UI and DRAW_MARKER_RECT:
@@ -89,7 +96,7 @@ def detect_fiducial(img, fid_id=-1):
                     # draw marker id text
                     cv2.putText(ret_img, f"FID{id}", bot_left, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1)
 
-                return center, angle, ret_img # if successfuly found marker, return location
+                return center, angle, px_scale, ret_img # if successfuly found marker, return location
     
     # if reaches here, didnt find marker, or didnt find marker with id indicated
 
@@ -113,7 +120,7 @@ def image_callback(img_msg):
     # analyse image
     image = imutils.resize(image, height=500)
     rospy.loginfo(f"Image size after scaling: w={image.shape[1]} h={image.shape[0]}")
-    marker_center, marker_orientation, image = detect_fiducial(image)
+    marker_center, marker_orientation, scale, image = detect_fiducial(image)
 
     if marker_center is not None: # None if no marker detected
 
@@ -124,9 +131,12 @@ def image_callback(img_msg):
             rospy.logerr("Image publisher not initialised")
         if orient_pub is None:
             rospy.logerr("Orientation publisher not initialised")
+        if scale_pub is None:
+            rospy.logerr("Pixel scale publisher not initialised")
 
         orient_pub.publish(int(marker_orientation))
         position_pub.publish(x=marker_center[0], y=marker_center[1])
+        scale_pub.publish(scale)
         final_img_pub.publish(cam_bridge.cv2_to_imgmsg(image, encoding="bgr8"))
 
     if SHOW_UI:
@@ -160,7 +170,8 @@ if __name__ == "__main__":
 
     position_pub = rospy.Publisher("/position_2d", geom_msg.Point, queue_size=10)
     orient_pub = rospy.Publisher("/orientation_2d", std_msg.Int16, queue_size=10)
-    final_img_pub = rospy.Publisher("/tracker_debug/final_img", sens_msg.Image, queue_size=10)
+    scale_pub = rospy.Publisher("/px_scale", std_msg.Float32, queue_size=10)
+    final_img_pub = rospy.Publisher("/debug/final_img", sens_msg.Image, queue_size=10)
 
     while not rospy.is_shutdown():
         rospy.spin()
