@@ -1,13 +1,15 @@
 import rospy
 from sensor_msgs import msg as sens_msg
 from geometry_msgs import msg as geom_msg
+from std_msgs import msg as std_msg
 from cv_bridge import CvBridge, CvBridgeError
+
+from math import *
 
 import cv2
 import imutils
 
 cam_bridge = CvBridge()
-position_pub = None
 
 # aruco marker parameters
 aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_5X5_50)
@@ -58,23 +60,36 @@ def detect_fiducial(img, fid_id=-1):
                 # calculate centre of marker
                 center = (int((top_right[0]+bot_left[0])/2), int((top_left[1]+bot_right[1])/2))
 
-                if SHOW_UI and DRAW_MARKER_CROSS:
-                    # draw cross at centre
-                    cv2.line(ret_img, (center[0]-20, center[1]), (center[0]+20, center[1]), (0, 0, 255), 1)
-                    cv2.line(ret_img, (center[0], center[1]-20), (center[0], center[1]+20), (0, 0, 255), 1)
-                
+                # calculate angle between horizontal and robot orientation
+                angle = atan2(top_right[1] - bot_right[1], top_right[0] - bot_right[0])
+                angle = degrees(angle)
+
+                # draw debug ui
                 if SHOW_UI and DRAW_MARKER_RECT:
                     # draw box around marker
                     cv2.line(ret_img, top_left, top_right, (0, 255, 0), 2)
                     cv2.line(ret_img, top_right, bot_right, (0, 255, 0), 2)
                     cv2.line(ret_img, bot_right, bot_left, (0, 255, 0), 2)
                     cv2.line(ret_img, bot_left, top_left, (0, 255, 0), 2)
+                    
+                if SHOW_UI and DRAW_MARKER_CROSS:
+                    # draw cross at centre
+                    cv2.line(ret_img, (center[0]-10, center[1]), (center[0]+10, center[1]), (0, 0, 255), 2)
+                    cv2.line(ret_img, (center[0], center[1]-10), (center[0], center[1]+10), (0, 0, 255), 2)
+
+                    # draw orientation line from center
+                    length = 40
+                    endy = int(center[1] + length * sin(radians(angle)))
+                    endx = int(center[0] + length * cos(radians(angle)))
+
+                    cv2.line(ret_img, (center[0], center[1]), (endx, endy), (0, 0, 255), 2)
+            
 
                 if SHOW_UI and DRAW_MARKER_ID:
                     # draw marker id text
                     cv2.putText(ret_img, f"FID{id}", bot_left, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1)
 
-                return center, ret_img # if successfuly found marker, return location
+                return center, angle, ret_img # if successfuly found marker, return location
     
     # if reaches here, didnt find marker, or didnt find marker with id indicated
 
@@ -98,15 +113,19 @@ def image_callback(img_msg):
     # analyse image
     image = imutils.resize(image, height=500)
     rospy.loginfo(f"Image size after scaling: w={image.shape[1]} h={image.shape[0]}")
-    marker_center, image = detect_fiducial(image)
+    marker_center, marker_orientation, image = detect_fiducial(image)
 
     if marker_center is not None: # None if no marker detected
 
-        # publish center position and debug image
+        # publish data
         if position_pub is None:
             rospy.logerr("Position publisher not initialised")
         if final_img_pub is None:
             rospy.logerr("Image publisher not initialised")
+        if orient_pub is None:
+            rospy.logerr("Orientation publisher not initialised")
+
+        orient_pub.publish(int(marker_orientation))
         position_pub.publish(x=marker_center[0], y=marker_center[1])
         final_img_pub.publish(cam_bridge.cv2_to_imgmsg(image, encoding="bgr8"))
 
@@ -138,7 +157,9 @@ if __name__ == "__main__":
     MARKER_SIZE = rospy.get_param('~marker_size')
 
     image_sub = rospy.Subscriber("/camera/color/image_raw", sens_msg.Image, image_callback)
+
     position_pub = rospy.Publisher("/position_2d", geom_msg.Point, queue_size=10)
+    orient_pub = rospy.Publisher("/orientation_2d", std_msg.Int16, queue_size=10)
     final_img_pub = rospy.Publisher("/tracker_debug/final_img", sens_msg.Image, queue_size=10)
 
     while not rospy.is_shutdown():

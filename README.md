@@ -23,6 +23,7 @@ All input images are scaled to height = 500px, keeping constant aspect ratio. Cu
  - */camera/color/image_raw* (sensor_msgs.Image): Color image input
 
 #### Publishes:
+ - */orientation_2d* (stad_msgs.Int8): Angle of marker in degrees, where 0 is right on the x axis, increasing counter-clockwise
  - */position*_2d (geometry_msgs.Point): Image X and Y coordinates of the robot. Z is always zero
  - */tracker_debug/final_img* (sensor_msgs.Image): Resultant debug image showing detected markers
 
