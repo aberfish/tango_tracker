@@ -31,7 +31,9 @@ All input images are scaled to height = 500px, keeping constant aspect ratio. Cu
 #### Parameters:
  - *~show_ui* (boolean, Optional): If True, show the opencv tracking UI for debugging. Defaults to false
  - *~robot_arucoID* (int, Optional): ID of the Aruco marker on the robot. Defaults to selecting the lowest Aruco marker ID in the frame
- - *~marker_size* (float): Measuerment in **centimeters** of aruco marker width/height
+ - *~marker_size* (float): Measurement in **centimeters** of aruco marker width/height
+ - *~debug_video* (boolean, Optional): If true, output video file of annotated debug frames to *~video_location*. Defaults to false
+ - *~video_location* (str, Optional): directory and filename of debug file. Filetype should be '.avi'. Defaults to '~/DebugVideo.avi'
 
 #### Usage:
 To **track the robot**:

@@ -22,6 +22,10 @@ DRAW_MARKER_CROSS = True
 DRAW_MARKER_RECT = True
 DRAW_MARKER_ID = True
 
+# OTHER options
+CREATE_DEBUG_VIDEO = False
+video_loc = ""
+
 fid_id = -1 # robot's aruco marker ID, if -1 then assume only one marker and always output location of lowest id present
 
 def detect_fiducial(img, fid_id=-1):
@@ -105,7 +109,7 @@ def detect_fiducial(img, fid_id=-1):
     else:
         rospy.loginfo("Didnt find marker with ID f{fid_id} in frame")
 
-    return None, ret_img
+    return None, None, None, ret_img
 
 def image_callback(img_msg):
     """rgb image message callback
@@ -139,6 +143,9 @@ def image_callback(img_msg):
         scale_pub.publish(scale)
         final_img_pub.publish(cam_bridge.cv2_to_imgmsg(image, encoding="bgr8"))
 
+        if CREATE_DEBUG_VIDEO:
+            outvid.write(image)
+
     if SHOW_UI:
         # display image
         cv2.imshow("Image Window", image)
@@ -159,12 +166,16 @@ if __name__ == "__main__":
     SHOW_UI = rospy.get_param('~show_ui', default=False)
     if type(SHOW_UI) is not bool:
         rospy.logerr("param ~show_ui must be a boolean")
+        
 
     fid_id = rospy.get_param('~robot_arucoID', default=-1)
     if type(fid_id) is not int:
         rospy.logerr("param ~robot_arucoID must be an integer")
 
     MARKER_SIZE = rospy.get_param('~marker_size')
+    CREATE_DEBUG_VIDEO = rospy.get_param('~debug_video', default=False)
+    video_loc = rospy.get_param('~video_location', default="~/DebugVideo.avi")
+
 
     image_sub = rospy.Subscriber("/camera/color/image_raw", sens_msg.Image, image_callback)
 
@@ -173,6 +184,13 @@ if __name__ == "__main__":
     scale_pub = rospy.Publisher("/px_scale", std_msg.Float32, queue_size=10)
     final_img_pub = rospy.Publisher("/debug/final_img", sens_msg.Image, queue_size=10)
 
+    if CREATE_DEBUG_VIDEO:
+        outvid = cv2.VideoWriter(video_loc, cv2.VideoWriter_fourcc(*'DIVX'), 15, (888, 500))
+ 
     while not rospy.is_shutdown():
         rospy.spin()
         rate.sleep()
+
+    if CREATE_DEBUG_VIDEO:
+        rospy.loginfo("Saving video")
+        outvid.release()
