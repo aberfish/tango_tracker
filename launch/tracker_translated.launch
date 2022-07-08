@@ -9,18 +9,16 @@
     <arg name="stereo_module/exposure/2"  default="1"/>
     <arg name="stereo_module/gain/2"      default="16"/>
 
-    <arg name="depth_width"       value="1920"/>
-    <arg name="depth_height"      value="1080"/>
+    <arg name="im_width"       value="848"/>
+    <arg name="im_height"      value="480"/>
     <arg name="depth_fps"         value="30"/>
-    <arg name="color_width"       value="1920"/>
-    <arg name="color_height"      value="1080"/>
     <arg name="color_fps"         value="30"/>
     <arg name="enable_depth"      value="true"/>
     <arg name="enable_color"      value="true"/>
     <arg name="enable_gyro"       value="false"/>
     <arg name="enable_accel"      value="false"/>
     <arg name="enable_pointcloud" value="true"/>
-    <arg name="enable_sync"       value="true"/>
+    <arg name="enable_sync"       value="false"/>
     <arg name="align_depth"       value="true"/>
 
     <arg name="serial_no"           default=""/>
@@ -44,8 +42,6 @@
     <arg name="enable_confidence"   default="true"/>
     <arg name="confidence_fps"      default="-1"/>
 
-    <arg name="infra_width"         default="1920"/>
-    <arg name="infra_height"        default="1080"/>
     <arg name="enable_infra"        default="false"/>
     <arg name="enable_infra1"       default="false"/>
     <arg name="enable_infra2"       default="false"/>
@@ -86,8 +82,8 @@
             <arg name="fisheye_height"           value="$(arg fisheye_height)"/>
             <arg name="enable_fisheye"           value="$(arg enable_fisheye)"/>
 
-            <arg name="depth_width"              value="$(arg depth_width)"/>
-            <arg name="depth_height"             value="$(arg depth_height)"/>
+            <arg name="depth_width"              value="$(arg im_width)"/>
+            <arg name="depth_height"             value="$(arg im_height)"/>
             <arg name="enable_depth"             value="$(arg enable_depth)"/>
 
             <arg name="confidence_width"         value="$(arg confidence_width)"/>
@@ -95,12 +91,12 @@
             <arg name="enable_confidence"        value="$(arg enable_confidence)"/>
             <arg name="confidence_fps"           value="$(arg confidence_fps)"/>
 
-            <arg name="color_width"              value="$(arg color_width)"/>
-            <arg name="color_height"             value="$(arg color_height)"/>
+            <arg name="color_width"              value="$(arg im_width)"/>
+            <arg name="color_height"             value="$(arg im_height)"/>
             <arg name="enable_color"             value="$(arg enable_color)"/>
 
-            <arg name="infra_width"              value="$(arg infra_width)"/>
-            <arg name="infra_height"             value="$(arg infra_height)"/>
+            <arg name="infra_width"              value="$(arg im_width)"/>
+            <arg name="infra_height"             value="$(arg im_height)"/>
             <arg name="enable_infra"             value="$(arg enable_infra)"/>
             <arg name="enable_infra1"            value="$(arg enable_infra1)"/>
             <arg name="enable_infra2"            value="$(arg enable_infra2)"/>
@@ -132,10 +128,19 @@
 
         </include>
     </group>
+    
+    <node pkg="translate_coords" type="cam_transform.py" name="tf_cam_broadcast" args="_tf_pos:=[0.0,0.0,0.0] _tf_rot:=[0.0,0.0,0.0] _world_frame:='map' _cam_frame:='camera_link'"/>
 
     <node pkg="tango_tracker" type="tango_tracker.py" name="tracker" args="_show_ui:=True _marker_size:=$(arg marker_size)" required="true">
     	<remap from="position_2d" to="/input_coords" />
     </node>
     
     <node pkg="translate_coords" type="cam_to_depthcoords.py" name="camtodepthtest" required="true"/>
+    
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find tango_tracker)/rviz/cam_coordtranslation.rviz" />
+    
+      <!-- Loads the camera model -->
+      <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find realsense2_description)/urdf/test_d435_camera.urdf.xacro' use_nominal_extrinsics:=false"/>
+      <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+    
 </launch>
