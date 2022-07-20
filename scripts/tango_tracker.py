@@ -99,6 +99,7 @@ def detect_fiducial(img, fid_id=-1):
                 if SHOW_UI and DRAW_MARKER_ID:
                     # draw marker id text
                     cv2.putText(ret_img, f"FID{id}", bot_left, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1)
+                    cv2.putText(ret_img, f"pos: {center} orient: {angle}", (0, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2)
 
                 return center, angle, px_scale, ret_img # if successfuly found marker, return location
     
@@ -122,8 +123,8 @@ def image_callback(img_msg):
         rospy.logerr("Failed to convert ROS message to image")
 
     # analyse image
-    image = imutils.resize(image, height=500)
-    rospy.loginfo(f"Image size after scaling: w={image.shape[1]} h={image.shape[0]}")
+    #image = imutils.resize(image, height=500)
+    rospy.loginfo(f"Image size: w={image.shape[1]} h={image.shape[0]}")
     marker_center, marker_orientation, scale, image = detect_fiducial(image)
 
     if marker_center is not None: # None if no marker detected
@@ -148,6 +149,7 @@ def image_callback(img_msg):
 
     if SHOW_UI:
         # display image
+        image = imutils.resize(image, height=1000)
         cv2.imshow("Image Window", image)
 
         # handle user input
