@@ -5,7 +5,6 @@ import roslib
 import os, sys
 import rospy, rospkg
 import cv2
-from wheelchair_msgs.msg import mobilenet #import the wheelchair messages files
 from std_msgs.msg import String
 from sensor_msgs.msg import Image, CameraInfo
 from std_msgs.msg import Header
